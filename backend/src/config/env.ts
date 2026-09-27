@@ -25,7 +25,7 @@ const schema = z.object({
   SLACK_CLIENT_ID: z.string().optional(),
   SLACK_CLIENT_SECRET: z.string().optional(),
   SLACK_REDIRECT_URI: z.string().default("http://localhost:5000/api/slack/callback"),
-  SLACK_BOT_SCOPES: z.string().default("chat:write,channels:read,groups:read,incoming-webhook"),
+  SLACK_BOT_SCOPES: z.string().default("chat:write"),
 });
 
 const parsed = schema.parse(process.env);

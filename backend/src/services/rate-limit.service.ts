@@ -47,7 +47,16 @@ export async function reserveSendSlot(sender: string, userId: string, limit: num
   if (Number(allowed) !== 1) {
     const notifyKey = `rate-notified:${key}`;
     const shouldNotify = await redis.set(notifyKey, "1", "EX", secondsLeft, "NX");
-    if (shouldNotify) await notifyRateLimit(userId, sender, limit).catch(() => undefined);
+    if (shouldNotify) {
+  try {
+    await notifyRateLimit(userId, sender, limit);
+  } catch (error) {
+    console.error(
+      "[rate-limit] Slack notification failed:",
+      error instanceof Error ? error.message : "Unknown Slack error",
+    );
+  }
+}
     return { allowed: false, retryAt: nextHourTimestamp(now) };
   }
 

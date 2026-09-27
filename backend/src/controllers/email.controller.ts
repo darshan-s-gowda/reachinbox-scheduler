@@ -62,7 +62,20 @@ export async function search(req: Request, res: Response) {
   return res.json(await searchEmails(id, q));
 }
 
-export async function etherealPreview(_req: Request, res: Response) {
-  const latest = await prisma.email.findFirst({ where: { status: "SENT" }, orderBy: { sentAt: "desc" } });
-  return res.json({ message: "Ethereal preview URLs are returned in worker logs/response for test sends.", latest });
+export async function etherealPreview(req: Request, res: Response) {
+  const id = userId(req);
+  if (!id) return res.status(401).json({ message: "Authentication required" });
+
+  const latest = await prisma.email.findFirst({
+    where: {
+      userId: id,
+      status: "SENT",
+    },
+    orderBy: { sentAt: "desc" },
+  });
+
+  return res.json({
+    message: "Ethereal preview URLs are returned in worker logs/response for test sends.",
+    latest,
+  });
 }
