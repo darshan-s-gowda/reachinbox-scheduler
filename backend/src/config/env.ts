@@ -7,6 +7,7 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().default("redis://localhost:6379"),
   ELASTICSEARCH_URL: z.string().default("http://localhost:9200"),
+  ELASTICSEARCH_API_KEY: z.string().optional(),
   FRONTEND_URL: z.string().url().default("http://localhost:5173"),
   ADMIN_EMAILS: z.string().default("").transform((value) => value.split(",").map((v) => v.trim().toLowerCase()).filter(Boolean)),
   MAX_EMAILS_PER_SCHEDULE: z.coerce.number().int().positive().max(10000).default(5000),
