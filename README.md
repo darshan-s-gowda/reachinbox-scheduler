@@ -1,3 +1,4 @@
+The given time was not sufficient and  i did what all i could do within 24 hours of time 
 # ReachInbox Email Scheduler
 
 Production-style full-stack email scheduling assignment implementation using TypeScript, Express, PostgreSQL, Redis, BullMQ, Elasticsearch, Ethereal SMTP, React and Tailwind CSS.
