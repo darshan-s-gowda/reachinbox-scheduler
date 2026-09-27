@@ -1,0 +1,40 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+.next/
+out/
+
+# Generated files
+generated/
+backend/generated/
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# Frontend
+frontend/.vite/
+
+# Temporary files
+*.tmp
+*.temp
