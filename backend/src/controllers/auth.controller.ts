@@ -82,10 +82,22 @@ export function googleStart(
 
   req.session.oauthState = state;
 
-  return passport.authenticate("google", {
-    scope: ["profile", "email"],
-    state,
-  })(req, res, next);
+  req.session.save((saveError) => {
+    if (saveError) {
+      console.error("OAuth state session save error:", saveError);
+      return next(saveError);
+    }
+
+    console.log("OAUTH STATE SAVED:", {
+      sessionID: req.sessionID,
+      stateLength: state.length,
+    });
+
+    return passport.authenticate("google", {
+      scope: ["profile", "email"],
+      state,
+    })(req, res, next);
+  });
 }
 
 export function googleCallback(
@@ -158,8 +170,7 @@ export function googleCallback(
             }
             console.log("AUTH SESSION SAVED:", {
               sessionID: req.sessionID,
-              userId: req.user?.id,
-            });
+              userId: req.user?.id,});
 
             return res.redirect(
               `${env.FRONTEND_URL}/dashboard`,
