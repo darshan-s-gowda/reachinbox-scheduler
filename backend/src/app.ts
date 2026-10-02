@@ -1,4 +1,6 @@
 import express from "express";
+import { RedisStore } from "connect-redis";
+import { sessionRedis } from "./config/redis";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
@@ -43,7 +45,11 @@ app.use(express.json({ limit: env.MAX_BODY_BYTES }));
 app.use(express.urlencoded({ extended: false, limit: "100kb" }));
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 
+
 app.use(session({
+  store: new RedisStore({
+    client: sessionRedis,
+  }),
   secret: env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
