@@ -6,7 +6,9 @@ import { env } from "../config/env";
 import { prisma } from "../config/database";
 
 export function configurePassport() {
-  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return;
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    return;
+  }
 
   passport.use(
     new GoogleStrategy(
@@ -18,13 +20,28 @@ export function configurePassport() {
       async (_accessToken, _refreshToken, profile, done) => {
         try {
           const email = profile.emails?.[0]?.value;
-          if (!email) return done(new Error("Google account did not provide an email"));
+
+          if (!email) {
+            return done(
+              new Error("Google account did not provide an email"),
+            );
+          }
 
           const user = await prisma.user.upsert({
             where: { email },
-            create: { googleId: profile.id, email, name: profile.displayName || email, avatar: profile.photos?.[0]?.value },
-            update: { googleId: profile.id, name: profile.displayName || email, avatar: profile.photos?.[0]?.value },
+            create: {
+              googleId: profile.id,
+              email,
+              name: profile.displayName || email,
+              avatar: profile.photos?.[0]?.value,
+            },
+            update: {
+              googleId: profile.id,
+              name: profile.displayName || email,
+              avatar: profile.photos?.[0]?.value,
+            },
           });
+
           return done(null, user);
         } catch (error) {
           return done(error as Error);
@@ -34,10 +51,20 @@ export function configurePassport() {
   );
 }
 
-passport.serializeUser((user, done) => done(null, user.id));
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
 passport.deserializeUser(async (id: string, done) => {
-  try { done(null, await prisma.user.findUnique({ where: { id } })); }
-  catch (error) { done(error); }
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+    });
+
+    done(null, user);
+  } catch (error) {
+    done(error);
+  }
 });
 
 export function googleStart(
@@ -46,9 +73,9 @@ export function googleStart(
   next: (err?: unknown) => void,
 ) {
   if (!env.GOOGLE_CLIENT_ID) {
-    return res
-      .status(503)
-      .json({ message: "Google OAuth is not configured" });
+    return res.status(503).json({
+      message: "Google OAuth is not configured",
+    });
   }
 
   const state = crypto.randomBytes(32).toString("hex");
@@ -66,9 +93,10 @@ export function googleCallback(
   res: Response,
   next: (err?: unknown) => void,
 ) {
-  const returnedState = typeof req.query.state === "string"
-    ? req.query.state
-    : undefined;
+  const returnedState =
+    typeof req.query.state === "string"
+      ? req.query.state
+      : undefined;
 
   const expectedState = req.session.oauthState;
 
@@ -93,30 +121,70 @@ export function googleCallback(
     {
       failureRedirect: `${env.FRONTEND_URL}/login?error=oauth`,
     },
-    (_err: unknown, user: Express.User | false) => {
+    (err: unknown, user: Express.User | false) => {
+      if (err) {
+        console.error("Google authentication error:", err);
+        return next(err);
+      }
+
       if (!user) {
-        return res.redirect(`${env.FRONTEND_URL}/login?error=oauth`);
+        return res.redirect(
+          `${env.FRONTEND_URL}/login?error=oauth`,
+        );
       }
 
       req.session.regenerate((regenerateError) => {
-        if (regenerateError) return next(regenerateError);
+        if (regenerateError) {
+          console.error(
+            "Session regeneration error:",
+            regenerateError,
+          );
+          return next(regenerateError);
+        }
 
         req.logIn(user, (loginError) => {
-          if (loginError) return next(loginError);
+          if (loginError) {
+            console.error("Passport login error:", loginError);
+            return next(loginError);
+          }
 
-          return res.redirect(`${env.FRONTEND_URL}/dashboard`);
+          req.session.save((saveError) => {
+            if (saveError) {
+              console.error(
+                "Session save error:",
+                saveError,
+              );
+              return next(saveError);
+            }
+            console.log("AUTH SESSION SAVED:", {
+              sessionID: req.sessionID,
+              userId: req.user?.id,
+            });
+
+            return res.redirect(
+              `${env.FRONTEND_URL}/dashboard`,
+            );
+          });
         });
       });
     },
   )(req, res, next);
 }
+
 export function me(req: Request, res: Response) {
-  if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+  if (!req.user) {
+    return res.status(401).json({
+      message: "Not authenticated",
+    });
+  }
+
   return res.json(req.user);
 }
 
 export function logout(req: Request, res: Response) {
   req.logout(() => {
-    req.session.destroy(() => res.json({ ok: true }));
+    req.session.destroy(() => {
+      res.json({ ok: true });
+    });
   });
 }
